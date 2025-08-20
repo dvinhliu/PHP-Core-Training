@@ -1,0 +1,84 @@
+<?php
+
+namespace App\Core;
+
+class Router
+{
+    private array $routes = [];
+
+    public function add($httpMethod, $path, $action, $options = [])
+    {
+        $this->routes[$httpMethod][$path] = [
+            'action'     => $action,
+            'name'       => $options['name'] ?? null,
+            'middleware' => $options['middleware'] ?? []
+        ];
+    }
+
+    // Shortcut cho từng method
+    public function get($path, $action, $options = [])
+    {
+        $this->add('GET', $path, $action, $options);
+    }
+    public function post($path, $action, $options = [])
+    {
+        $this->add('POST', $path, $action, $options);
+    }
+    public function put($path, $action, $options = [])
+    {
+        $this->add('PUT', $path, $action, $options);
+    }
+    public function delete($path, $action, $options = [])
+    {
+        $this->add('DELETE', $path, $action, $options);
+    }
+
+    public function dispatch()
+    {
+        $method = $_SERVER['REQUEST_METHOD'];
+        $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+
+        $routes = $this->routes[$method] ?? [];
+
+        foreach ($routes as $path => $route) {
+            // Chuyển /user/{id} thành regex
+            $pattern = preg_replace('/\{[a-zA-Z_]+\}/', '([a-zA-Z0-9_-]+)', $path);
+            $pattern = "#^" . $pattern . "$#";
+
+            if (preg_match($pattern, $uri, $matches)) {
+                array_shift($matches); // bỏ full match
+                $params = $matches;
+
+                // Middleware
+                foreach ($route['middleware'] as $mw) {
+                    $mwClass = "App\\Middleware\\$mw";
+                    (new $mwClass())->handle();
+                }
+
+                // Controller
+                [$controller, $methodName] = explode('@', $route['action']);
+                $controllerClass = "App\\Controllers\\$controller";
+                $ctrl = new $controllerClass();
+
+                return $ctrl->$methodName(...$params);
+            }
+        }
+
+        http_response_code(404);
+        echo "404 Not Found";
+        exit;
+    }
+
+    // Lấy route theo name
+    public function route($name)
+    {
+        foreach ($this->routes as $methodRoutes) {
+            foreach ($methodRoutes as $path => $info) {
+                if ($info['name'] === $name) {
+                    return $path;
+                }
+            }
+        }
+        return null;
+    }
+}

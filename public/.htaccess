@@ -1,0 +1,11 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Nếu file hoặc folder tồn tại thì dùng trực tiếp
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # Ngược lại chuyển hướng về index.php
+    RewriteRule ^ index.php [QSA,L]
+
+</IfModule>
