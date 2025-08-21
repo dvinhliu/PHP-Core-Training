@@ -30,6 +30,7 @@ class Controller
         }
 
         // tạo biến từ $data
+        $data['router'] = App::router(); // truyền biến $router vào view
         extract($data);
 
         // layout chính

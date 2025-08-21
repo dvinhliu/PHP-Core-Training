@@ -13,6 +13,6 @@ class AuthController extends Controller
 
     public function register()
     {
-        return $this->view('auth/register');
+        $this->view('auth/register', ['title' => 'Trang đăng ký']);
     }
 }
