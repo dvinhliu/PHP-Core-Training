@@ -4,6 +4,7 @@ namespace App\Core;
 
 use Dotenv\Dotenv;
 use App\Core\Router;
+use App\Helpers\Flash;
 
 class App
 {
@@ -11,14 +12,23 @@ class App
 
     public static function run()
     {
+        // Khởi động session ngay tại đây
+        if (session_status() === PHP_SESSION_NONE) {
+            ini_set('session.cookie_lifetime', 0);
+            session_start();
+        }
+
         if (file_exists(dirname(__DIR__, 2) . '/.env')) {
             $dotenv = Dotenv::createImmutable(dirname(__DIR__, 2));
             $dotenv->load();
         }
 
+        require_once dirname(__DIR__) . '/Helpers/Flash.php';
+        require_once dirname(__DIR__) . '/Helpers/form.php';
+
         self::$router = new Router();
 
-        require dirname(__DIR__, 2) . '/routes/web.php';
+        require_once dirname(__DIR__, 2) . '/routes/web.php';
 
         self::$router->dispatch();
     }
