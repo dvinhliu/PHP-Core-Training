@@ -2,11 +2,20 @@
     <div class="bg-[#FAF7F2] rounded shadow p-6 w-[600px]">
         <!-- Login form -->
         <div class="text-center font-semibold text-5xl mb-10" novalidate>Đăng nhập</div>
-        <form action="#" method="POST" class="space-y-4">
+        <?php if (!empty($_SESSION['errors']['general'])): ?>
+            <div class="mb-4 p-3 text-red-700 bg-red-100 border border-red-300 rounded">
+                <?= $_SESSION['errors']['general'] ?>
+            </div>
+            <?php unset($_SESSION['errors']['general']); ?>
+        <?php endif; ?>
+        <form action="<?= $router->route('auth.login.post') ?>" method="POST" class="space-y-4">
+            <?= \App\Core\Csrf::tokenField() ?>
             <label for="username" class="block text-sm font-medium text-gray-700 p-0 m-0 mb-1">Username</label>
-            <input type="text" name="username" placeholder="Username" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500">
+            <input type="text" name="username" placeholder="Username" value="<?= htmlspecialchars($old['username'] ?? '') ?>" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500">
+            <?= showError('username') ?>
             <label for="password" class="block text-sm font-medium text-gray-700 p-0 m-0 mb-1">Mật khẩu</label>
             <input type="password" name="password" placeholder="Mật khẩu" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500">
+            <?= showError('password') ?>
             <div class="flex justify-between mt-1">
                 <div class="flex items-center">
                     <input type="checkbox" name="remember" class="mr-2 cursor-pointer">

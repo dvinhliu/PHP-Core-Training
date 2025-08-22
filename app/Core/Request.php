@@ -1,5 +1,8 @@
 <?php
-abstract class BaseRequest
+
+namespace App\Core;
+
+abstract class Request
 {
     protected $data;
     protected $errors = [];
@@ -52,6 +55,12 @@ abstract class BaseRequest
                 return in_array($value, $options);
             case 'exists':
                 // giả lập, thực tế thì query DB
+                return true;
+            case 'regex':
+                // nếu có tham số regex thì kiểm tra
+                if ($params && $value !== null) {
+                    return preg_match($params, $value);
+                }
                 return true;
             default:
                 return true;
