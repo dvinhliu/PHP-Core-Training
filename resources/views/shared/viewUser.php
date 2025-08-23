@@ -1,0 +1,23 @@
+<div class="flex-1 my-8 flex items-center justify-center">
+    <div class="bg-[#FAF7F2] rounded shadow p-6 w-[600px]">
+        <!-- Login form -->
+        <div class="text-center font-semibold text-5xl mb-10" novalidate>Màn hình chi tiết</div>
+        <div class="flex flex-col-2 gap-3">
+            <div class="flex-1">
+                <div class="space-y-6">
+                    <div class="flex items-center">
+                        <label class="w-1/3 text-gray-700 font-semibold">Username</label>
+                        <div class="w-2/3 border p-2 rounded bg-gray-100"><?= htmlspecialchars($user->getUserName()) ?></div>
+                    </div>
+                    <div class="flex items-center">
+                        <label class="w-1/3 text-gray-700 font-semibold">Email</label>
+                        <div class="w-2/3 border p-2 rounded bg-gray-100"><?= htmlspecialchars($user->getEmail()) ?></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex justify-end mt-6">
+            <a href="<?= $router->route('user.edit', ['id' => $user->getId()]) ?>" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Chỉnh sửa</a>
+        </div>
+    </div>
+</div>

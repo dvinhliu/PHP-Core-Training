@@ -56,7 +56,7 @@ class AuthController extends Controller
         }
 
         // Lấy dữ liệu
-        $username = $_POST['username'];
+        $username = $_POST['user_name'];
         $password = $_POST['password'];
 
         // Tìm user
@@ -73,7 +73,7 @@ class AuthController extends Controller
         // Đăng nhập thành công
         $_SESSION['user_id']  = $user->getId();
         $_SESSION['user_name'] = $user->getUserName();
-        $_SESSION['role']     = $user->getRoleId() ?? 'member';
+        $_SESSION['role_id']     = $user->getRoleId() ?? 'member';
 
         // Redirect home
         header("Location: /");
@@ -82,22 +82,37 @@ class AuthController extends Controller
 
     public function registerPost()
     {
-        // Gọi request + validate
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            // Nếu không phải POST thì quay lại register
+            header("Location: /register");
+            exit;
+        }
+
+        if (!Csrf::validate($_POST['csrf_token'] ?? '')) {
+            $_SESSION['errors'] = ['general' => 'Token không hợp lệ'];
+            return $this->view('auth/register', [
+                'title' => 'Trang đăng ký',
+                'old'   => $_POST
+            ]);
+        }
+
+        // Validate dữ liệu form
         $request = new RegisterRequest($_POST);
 
         if ($request->fails()) {
+            $_SESSION['errors'] = $request->errors();
             return $this->view('auth/register', [
-                'title' => 'Trang đăng ký',
-                'errors' => $request->errors(),
-                'old'   => $_POST
+                'title'  => 'Trang đăng ký',
+                'old'    => $_POST
             ]);
         }
 
         // Tạo user mới
         $user = User::createUser([
-            'name'     => $_POST['username'],
+            'user_name'     => $_POST['user_name'],
             'email'    => $_POST['email'],
-            'password' => $_POST['password']
+            'password' => $_POST['password'],
+            'role_id'  => $_POST['role_id']
         ]);
 
         if ($user) {
@@ -105,9 +120,9 @@ class AuthController extends Controller
             header("Location: /login");
             exit;
         } else {
+            $_SESSION['errors'] = ['general' => 'Đăng ký không thành công'];
             return $this->view('auth/register', [
                 'title' => 'Trang đăng ký',
-                'errors' => ['general' => ['Đăng ký thất bại, vui lòng thử lại']],
                 'old' => $_POST
             ]);
         }

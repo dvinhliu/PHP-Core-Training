@@ -1,4 +1,7 @@
 <?php
+
+use App\Models\RoleType;
+
 $current = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $action = $_GET['action'] ?? null;
 ?>
@@ -16,14 +19,16 @@ $action = $_GET['action'] ?? null;
     </div>
   <?php else: ?>
     <div class="flex items-center space-x-12">
-      <a href="<?= $router->route('home') ?>"
+      <a href="<?= $router->route('user.home') ?>"
         class="text-xl cursor-pointer <?= ($current == '/' && $action !== 'logout_confirm') ? 'font-bold text-black' : '' ?>">
         Trang chủ
       </a>
-      <a href="<?= $router->route('auth.register') ?>"
-        class="text-xl cursor-pointer <?= ($current == '/register' && $action !== 'logout_confirm') ? 'font-bold text-black' : '' ?>">
-        Đăng ký
-      </a>
+      <?php if (isset($_SESSION['role_id']) && $_SESSION['role_id'] === RoleType::ADMIN->value): ?>
+        <a href="<?= $router->route('auth.register') ?>"
+          class="text-xl cursor-pointer <?= ($current == '/register' && $action !== 'logout_confirm') ? 'font-bold text-black' : '' ?>">
+          Đăng ký
+        </a>
+      <?php endif; ?>
       <a href="<?= $current ?>?action=logout_confirm"
         class="text-xl cursor-pointer <?= ($action === 'logout_confirm') ? 'font-bold text-black' : '' ?>">
         Đăng xuất

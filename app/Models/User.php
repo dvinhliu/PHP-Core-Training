@@ -118,21 +118,58 @@ class User
         }
     }
 
+    public static function getAllUsers(): array
+    {
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->query("SELECT * FROM users");
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return array_map(fn($item) => new User($item), $data);
+        } catch (\Exception $e) {
+            die("Error fetching users: " . $e->getMessage());
+        }
+    }
+
+    public static function getUserById(int $id): ?User
+    {
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->prepare("SELECT * FROM users WHERE id = :id LIMIT 1");
+            $stmt->execute(['id' => $id]);
+            $data = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $data ? new User($data) : null;
+        } catch (\Exception $e) {
+            die("Error fetching user: " . $e->getMessage());
+        }
+    }
+
     public static function createUser(array $data): ?User
     {
         try {
             $db = Database::getConnection();
-            $stmt = $db->prepare("INSERT INTO users (name, email, password, role_id) VALUES (:name, :email, :password, :role_id)");
+            $stmt = $db->prepare("INSERT INTO users (user_name, email, password, role_id) VALUES (:user_name, :email, :password, :role_id)");
             $stmt->execute([
-                'name' => $data['name'],
+                'user_name' => $data['user_name'],
                 'email' => $data['email'],
                 'password' => password_hash($data['password'], PASSWORD_BCRYPT),
-                'role_id' => 2
+                'role_id' => $data['role_id'],
             ]);
 
             return new User(array_merge($data, ['id' => $db->lastInsertId()]));
         } catch (\Exception $e) {
             die("Error creating user: " . $e->getMessage());
+        }
+    }
+
+    public static function checkUnique(string $table, string $column, $value): bool
+    {
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->prepare("SELECT COUNT(*) FROM $table WHERE $column = :value");
+            $stmt->execute(['value' => $value]);
+            return $stmt->fetchColumn() === 0;
+        } catch (\Exception $e) {
+            die("Error checking unique: " . $e->getMessage());
         }
     }
 

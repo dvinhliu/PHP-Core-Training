@@ -69,13 +69,19 @@ class Router
         exit;
     }
 
-    // Lấy route theo name
-    public function route($name)
+    public function route($name, $params = [])
     {
         foreach ($this->routes as $methodRoutes) {
             foreach ($methodRoutes as $path => $info) {
                 if ($info['name'] === $name) {
-                    return $path;
+                    $url = $path;
+
+                    // Thay thế các {param} trong path bằng giá trị từ $params
+                    foreach ($params as $key => $value) {
+                        $url = preg_replace('/\{' . $key . '\}/', $value, $url);
+                    }
+
+                    return $url;
                 }
             }
         }
