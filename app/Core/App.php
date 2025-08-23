@@ -4,7 +4,6 @@ namespace App\Core;
 
 use Dotenv\Dotenv;
 use App\Core\Router;
-use App\Helpers\Flash;
 
 class App
 {
