@@ -12,10 +12,6 @@ $action = $_GET['action'] ?? null;
         class="text-xl cursor-pointer <?= ($current == '/login' && $action !== 'logout_confirm') ? 'font-bold text-black' : '' ?>">
         Đăng nhập
       </a>
-      <a href="<?= $router->route('auth.register') ?>"
-        class="text-xl cursor-pointer <?= ($current == '/register' && $action !== 'logout_confirm') ? 'font-bold text-black' : '' ?>">
-        Đăng ký
-      </a>
     </div>
   <?php else: ?>
     <div class="flex items-center space-x-12">

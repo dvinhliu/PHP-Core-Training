@@ -4,6 +4,7 @@ namespace App\Core;
 
 use Dotenv\Dotenv;
 use App\Core\Router;
+use App\Helpers\IdEncoder;
 
 class App
 {
@@ -22,8 +23,11 @@ class App
             $dotenv->load();
         }
 
-        require_once dirname(__DIR__) . '/Helpers/Flash.php';
+        IdEncoder::init($_ENV['SECRET_KEY'] ?? 'change-me');
+
+        // Load helpers
         require_once dirname(__DIR__) . '/Helpers/form.php';
+        require_once dirname(__DIR__) . '/Helpers/encoder.php';
 
         self::$router = new Router();
 

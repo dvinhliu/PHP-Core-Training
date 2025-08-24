@@ -7,8 +7,8 @@ echo '</pre>';
 
 <div class="flex-1 my-8 flex items-center justify-center">
     <div class="bg-[#FAF7F2] rounded shadow p-6 w-[600px]">
-        <!-- Login form -->
-        <div class="text-center font-semibold text-5xl mb-10" novalidate>Đăng ký</div>
+        <!-- Register form -->
+        <div class="text-center font-semibold text-3xl mb-10" novalidate>Màn hình đăng ký</div>
         <form action="<?= $router->route('auth.register.post') ?>" method="POST" class="space-y-4">
             <?= \App\Core\Csrf::tokenField() ?>
             <label for="user_name" class="block text-sm font-medium text-gray-700 p-0 m-0 mb-1">Username</label>

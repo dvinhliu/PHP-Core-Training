@@ -29,6 +29,5 @@ class Flash
                 unset($_SESSION[$key][$field]);
             }
         }
-        unset($_SESSION[$key]); // Xóa hết lỗi sau khi hiển thị
     }
 }
