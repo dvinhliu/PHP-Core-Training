@@ -42,7 +42,7 @@ class Router
 
         foreach ($routes as $path => $route) {
             // Chuyển /user/{id} thành regex
-            $pattern = preg_replace('/\{[a-zA-Z_]+\}/', '([a-zA-Z0-9_-]+)', $path);
+            $pattern = preg_replace('/\{[a-zA-Z_]+\}/', '([^/]+)', $path);
             $pattern = "#^" . $pattern . "$#";
 
             if (preg_match($pattern, $uri, $matches)) {
@@ -64,8 +64,7 @@ class Router
             }
         }
 
-        http_response_code(404);
-        echo "404 Not Found";
+        header("Location: /404");
         exit;
     }
 

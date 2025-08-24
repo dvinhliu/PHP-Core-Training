@@ -143,6 +143,70 @@ class User
         }
     }
 
+    public static function getUsersPaginated(int $limit, int $offset): array
+    {
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->prepare("SELECT * FROM users ORDER BY user_name ASC LIMIT :limit OFFSET :offset");
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $stmt->execute();
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return array_map(fn($item) => new User($item), $data);
+        } catch (\Exception $e) {
+            die("Error fetching paginated users: " . $e->getMessage());
+        }
+    }
+
+    public static function countAll(): int
+    {
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->query("SELECT COUNT(*) FROM users");
+            return (int) $stmt->fetchColumn();
+        } catch (\Exception $e) {
+            die("Error counting users: " . $e->getMessage());
+        }
+    }
+
+
+    public static function checkUnique(string $table, string $column, $value): bool
+    {
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->prepare("SELECT COUNT(*) FROM $table WHERE $column = :value");
+            $stmt->execute(['value' => $value]);
+            return $stmt->fetchColumn() === 0;
+        } catch (\Exception $e) {
+            die("Error checking unique: " . $e->getMessage());
+        }
+    }
+
+    public static function checkIdExists(string $table, string $column, $value, int $id): bool
+    {
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->prepare("SELECT COUNT(*) FROM $table WHERE $column = :value AND id != :id");
+            $stmt->execute(['value' => $value, 'id' => $id]);
+            return $stmt->fetchColumn() === 0;
+        } catch (\Exception $e) {
+            die("Error checking ID existence: " . $e->getMessage());
+        }
+    }
+
+    public static function checkEmailExists(string $email): bool
+    {
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->prepare("SELECT COUNT(*) FROM users WHERE email = :email");
+            $stmt->execute(['email' => $email]);
+            return $stmt->fetchColumn() > 0;
+        } catch (\Exception $e) {
+            die("Error checking email existence: " . $e->getMessage());
+        }
+    }
+
     public static function createUser(array $data): ?User
     {
         try {
@@ -161,15 +225,68 @@ class User
         }
     }
 
-    public static function checkUnique(string $table, string $column, $value): bool
+    public static function updateUser(array $data): bool
     {
         try {
             $db = Database::getConnection();
-            $stmt = $db->prepare("SELECT COUNT(*) FROM $table WHERE $column = :value");
-            $stmt->execute(['value' => $value]);
-            return $stmt->fetchColumn() === 0;
+
+            // Lấy user hiện tại để giữ nguyên password nếu không nhập mới
+            $stmt = $db->prepare("SELECT password FROM users WHERE id = :id LIMIT 1");
+            $stmt->execute(['id' => $data['id']]);
+            $current = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$current) {
+                return false; // User không tồn tại
+            }
+
+            // Nếu có nhập password mới thì hash lại, ngược lại giữ nguyên
+            $password = !empty($data['password'])
+                ? password_hash($data['password'], PASSWORD_BCRYPT)
+                : $current['password'];
+
+            $stmt = $db->prepare("
+            UPDATE users 
+            SET user_name = :user_name, 
+                email = :email, 
+                password = :password, 
+                role_id = :role_id, 
+                updated_at = NOW() 
+            WHERE id = :id
+        ");
+
+            return $stmt->execute([
+                'user_name' => $data['user_name'],
+                'email'     => $data['email'],
+                'password'  => $password,
+                'role_id'   => $data['role_id'],
+                'id'        => $data['id'],
+            ]);
         } catch (\Exception $e) {
-            die("Error checking unique: " . $e->getMessage());
+            die("Error updating user: " . $e->getMessage());
+        }
+    }
+    public static function deleteUser(int $id): bool
+    {
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->prepare("DELETE FROM users WHERE id = :id");
+            return $stmt->execute(['id' => $id]);
+        } catch (\Exception $e) {
+            die("Error deleting user: " . $e->getMessage());
+        }
+    }
+
+    public static function setResetToken(string $email, string $token): bool
+    {
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->prepare("UPDATE users SET reset_token = :token, reset_token_expires = NOW() + INTERVAL 5 MINUTE WHERE email = :email");
+            return $stmt->execute([
+                'token' => $token,
+                'email' => $email
+            ]);
+        } catch (\Exception $e) {
+            die("Error setting reset token: " . $e->getMessage());
         }
     }
 

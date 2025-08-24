@@ -37,6 +37,6 @@ enum RoleType: int
 
     public static function updateRoles(): array
     {
-        return [self::ADMIN, self::MEMBER];
+        return [self::ADMIN, self::MEMBER, self::GUEST];
     }
 }
