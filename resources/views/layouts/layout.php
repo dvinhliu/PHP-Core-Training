@@ -18,7 +18,7 @@
     </div>
 
     <!-- Toast -->
-    <div id="toast" class="fixed top-5 right-5 max-w-xs w-full bg-white shadow-lg rounded-lg border border-gray-200 p-4 flex items-start space-x-3 transform transition-all duration-300 translate-x-full opacity-0">
+    <div id="toast" class="fixed top-5 right-5 max-w-sm w-full bg-white shadow-lg rounded-lg border border-gray-200 p-4 flex items-start space-x-3 transform transition-all duration-300 translate-x-full opacity-0">
         <div class="flex-1">
             <strong id="toast-title" class="block font-semibold text-gray-800"></strong>
             <p id="toast-message" class="text-sm text-gray-600"></p>
@@ -52,7 +52,7 @@
             toast.classList.remove("translate-x-full", "opacity-0");
             toast.classList.add("translate-x-0", "opacity-100");
 
-            setTimeout(hideToast, 2000);
+            setTimeout(hideToast, 2500);
         }
 
         function hideToast() {

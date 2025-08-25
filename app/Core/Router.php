@@ -51,8 +51,20 @@ class Router
 
                 // Middleware
                 foreach ($route['middleware'] as $mw) {
-                    $mwClass = "App\\Middleware\\$mw";
-                    (new $mwClass())->handle();
+                    if (is_callable($mw)) {
+                        // Nếu là hàm callback/closure thì gọi trực tiếp
+                        $result = $mw();
+                        if ($result === false) {
+                            return; // nếu middleware return false thì dừng
+                        }
+                    } elseif (is_array($mw)) {
+                        // Ví dụ: ['PermissionMiddleware', 'view_users']
+                        $mwClass = "App\\Middleware\\" . $mw[0];
+                        (new $mwClass($mw[1]))->handle();
+                    } else {
+                        $mwClass = "App\\Middleware\\$mw";
+                        (new $mwClass())->handle();
+                    }
                 }
 
                 // Controller

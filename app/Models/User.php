@@ -141,7 +141,7 @@ class User
     {
         try {
             $db = Database::getConnection();
-            $stmt = $db->prepare("SELECT * FROM users WHERE remember_token_expires > NOW() LIMIT 1");
+            $stmt = $db->prepare("SELECT * FROM users WHERE remember_expired_at > NOW() LIMIT 1");
             $stmt->execute();
             $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -305,21 +305,6 @@ class User
         }
     }
 
-    public static function setRememberToken(int $userId, ?string $token, ?string $expires): bool
-    {
-        try {
-            $db = Database::getConnection();
-            $stmt = $db->prepare("UPDATE users SET remember_token = :token, remember_token_expires = :expires WHERE id = :id");
-            return $stmt->execute([
-                'token'   => $token,
-                'expires' => $expires,
-                'id'     => $userId
-            ]);
-        } catch (\Exception $e) {
-            die("Error setting remember token: " . $e->getMessage());
-        }
-    }
-
     public static function deleteUser(int $id): bool
     {
         try {
@@ -345,14 +330,40 @@ class User
         }
     }
 
-    public static function verifyEmail(string $email, string $token): bool
+    public static function setRememberToken(int $userId, ?string $token, ?string $expires): bool
     {
         try {
             $db = Database::getConnection();
-            $stmt = $db->prepare("UPDATE users SET email_verified_at = NOW() WHERE email = :email");
-            return $stmt->execute(['email' => $email]);
+            $stmt = $db->prepare("UPDATE users SET remember_token = :token, remember_expired_at = :expires WHERE id = :id");
+            return $stmt->execute([
+                'token'   => $token,
+                'expires' => $expires,
+                'id'     => $userId
+            ]);
         } catch (\Exception $e) {
-            die("Error verifying email: " . $e->getMessage());
+            die("Error setting remember token: " . $e->getMessage());
+        }
+    }
+
+    public static function getPermissions(int $userId)
+    {
+        try {
+            $db = Database::getConnection();
+            $sql = "
+            SELECT p.name 
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            JOIN role_permission rp ON r.id = rp.role_id
+            JOIN permissions p ON rp.permission_id = p.id
+            WHERE u.id = ?
+        ";
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute([$userId]);
+
+            return $stmt->fetchAll(\PDO::FETCH_COLUMN); // trả về mảng ['login', 'view_users', ...]
+        } catch (\Exception $e) {
+            die("Error getting permissions: " . $e->getMessage());
         }
     }
 }
