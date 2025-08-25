@@ -16,9 +16,10 @@ class User
     private string $password;
     private int $role_id;
     private int $is_active;
-    private ?DateTime $email_verified_at;
     private ?string $reset_token;
     private ?DateTime $reset_token_expires;
+    private ?string $remember_token;
+    private ?DateTime $remember_expired_at;
     private ?DateTime $created_at;
     private ?DateTime $updated_at;
 
@@ -30,8 +31,6 @@ class User
         $this->password = $data['password'] ?? '';
         $this->role_id = $data['role_id'] ?? 0;
         $this->is_active = $data['is_active'] ?? 1;
-
-        $this->email_verified_at   = !empty($data['email_verified_at']) ? new DateTime($data['email_verified_at']) : null;
 
         $this->reset_token         = $data['reset_token'] ?? null;
         $this->reset_token_expires = !empty($data['reset_token_expires']) ? new DateTime($data['reset_token_expires']) : null;
@@ -68,11 +67,6 @@ class User
     public function isActive(): bool
     {
         return (bool)$this->is_active;
-    }
-
-    public function getEmailVerifiedAt(?string $format = 'Y-m-d H:i:s'): ?string
-    {
-        return $this->email_verified_at?->format($format);
     }
 
     public function getResetToken(): ?string
@@ -143,6 +137,25 @@ class User
         }
     }
 
+    public static function getUserByRememberToken(string $rawToken): ?User
+    {
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->prepare("SELECT * FROM users WHERE remember_token_expires > NOW() LIMIT 1");
+            $stmt->execute();
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($data as $row) {
+                if (password_verify($rawToken, $row['remember_token'])) {
+                    return new User($row);
+                }
+            }
+            return null;
+        } catch (\Exception $e) {
+            die("Error fetching user by remember token: " . $e->getMessage());
+        }
+    }
+
     public static function getUsersPaginated(int $limit, int $offset): array
     {
         try {
@@ -207,6 +220,18 @@ class User
         }
     }
 
+    public static function checkVerificationCode(string $email, string $code): bool
+    {
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->prepare("UPDATE users SET reset_token = NULL, reset_token_expires = NULL WHERE email = :email AND reset_token = :code AND reset_token_expires > NOW()");
+            $stmt->execute(['email' => $email, 'code' => $code]);
+            return $stmt->rowCount() > 0;
+        } catch (\Exception $e) {
+            die("Error checking verification code: " . $e->getMessage());
+        }
+    }
+
     public static function createUser(array $data): ?User
     {
         try {
@@ -265,6 +290,36 @@ class User
             die("Error updating user: " . $e->getMessage());
         }
     }
+
+    public static function updatePasswordByEmail(string $email, string $newPassword): bool
+    {
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->prepare("UPDATE users SET password = :password WHERE email = :email");
+            return $stmt->execute([
+                'password' => password_hash($newPassword, PASSWORD_BCRYPT),
+                'email'    => $email
+            ]);
+        } catch (\Exception $e) {
+            die("Error updating password: " . $e->getMessage());
+        }
+    }
+
+    public static function setRememberToken(int $userId, ?string $token, ?string $expires): bool
+    {
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->prepare("UPDATE users SET remember_token = :token, remember_token_expires = :expires WHERE id = :id");
+            return $stmt->execute([
+                'token'   => $token,
+                'expires' => $expires,
+                'id'     => $userId
+            ]);
+        } catch (\Exception $e) {
+            die("Error setting remember token: " . $e->getMessage());
+        }
+    }
+
     public static function deleteUser(int $id): bool
     {
         try {

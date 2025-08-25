@@ -13,7 +13,9 @@ echo '</pre>';
             <?= \App\Core\Csrf::tokenField() ?>
             <label for="verification_code" class="block text-sm font-medium text-gray-700 p-0 m-0 mb-1">Mã xác thực</label>
             <input type="text" name="verification_code" placeholder="Mã xác thực" value="<?= htmlspecialchars($old['verification_code'] ?? '') ?>" class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500">
-            <?= showError('verification_code') ?>
+            <div class="flex justify-end mt-1">
+                <a href="<?= $router->route('auth.forgot.password') ?>" class="text-blue-500 cursor-pointer">Quên mật khẩu</a>
+            </div>
             <button type="submit" class="w-full p-2 cursor-pointer bg-green-500 text-white rounded uppercase">Xác thực</button>
         </form>
     </div>

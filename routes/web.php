@@ -26,3 +26,6 @@ App::router()->post('/forgot-password', 'Auth\AuthController@forgotPasswordPost'
 
 App::router()->get('/verify', 'Auth\AuthController@verify', ['name' => 'auth.verify']);
 App::router()->post('/verify', 'Auth\AuthController@verifyPost', ['name' => 'auth.verify.post']);
+
+App::router()->get('/reset-password', 'Auth\AuthController@resetPassword', ['name' => 'auth.reset']);
+App::router()->post('/reset-password', 'Auth\AuthController@resetPasswordPost', ['name' => 'auth.reset.post']);

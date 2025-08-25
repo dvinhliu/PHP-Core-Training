@@ -8,6 +8,7 @@ use App\Requests\RegisterRequest;
 use App\Core\Csrf;
 use App\Models\User;
 use App\Requests\ForgotPasswordRequest;
+use App\Requests\ResetPasswordRequest;
 use App\Services\MailService;
 
 class AuthController extends Controller
@@ -25,7 +26,22 @@ class AuthController extends Controller
     public function logout()
     {
         // Xóa thông tin user
+        if (isset($_SESSION['user_id'])) {
+            User::setRememberToken($_SESSION['user_id'], null, null);
+        }
+
         unset($_SESSION['user_id'], $_SESSION['user_name'], $_SESSION['role_id']);
+
+        // Xóa cookie remember_token
+        if (isset($_COOKIE['remember_token'])) {
+            setcookie('remember_token', '', [
+                'expires' => time() - 3600,
+                'path' => '/',
+                'httponly' => true,
+                'samesite' => 'Strict'
+            ]);
+        }
+
         $_SESSION['success'] = 'Đăng xuất thành công';
         $this->redirect('/');
     }
@@ -76,8 +92,23 @@ class AuthController extends Controller
         $_SESSION['user_id']  = $user->getId();
         $_SESSION['user_name'] = $user->getUserName();
         $_SESSION['role_id']     = $user->getRoleId() ?? 'member';
-
         $_SESSION['success'] = 'Đăng nhập thành công';
+
+        if (!empty($_POST['remember'])) {
+            // Ghi nhớ đăng nhập
+            $token = bin2hex(random_bytes(32));
+            $expired = date('Y-m-d H:i:s', strtotime('+10 days'));
+
+            User::setRememberToken($user->getId(), password_hash($token, PASSWORD_DEFAULT), $expired);
+
+            setcookie("remember_token", $token, [
+                'expires'  => time() + (86400 * 10), // 10 ngày
+                'path'     => '/',
+                'httponly' => true,
+                'samesite' => 'Strict'
+            ]);
+        }
+
         // Redirect home
         $this->redirect('/');
     }
@@ -174,7 +205,7 @@ class AuthController extends Controller
             ]);
         }
 
-        $token = bin2hex(random_bytes(32));
+        $token = bin2hex(random_bytes(8));
 
         $saved = User::setResetToken($email, $token);
 
@@ -216,19 +247,14 @@ class AuthController extends Controller
             ]);
         }
 
-        // Validate dữ liệu form
-        $request = new VerifyRequest($_POST);
-
-        if ($request->fails()) {
-            $_SESSION['errors'] = $request->errors();
-            return $this->view('auth/verifycode', [
-                'title'  => 'Xác thực',
-                'old'    => $_POST
-            ]);
+        $email = $_SESSION['verification_email'] ?? null;
+        if (!$email) {
+            $_SESSION['errors'] = ['general' => 'Phiên đã hết hạn, vui lòng nhập lại email'];
+            return $this->redirect('/forgot-password');
         }
 
         // Kiểm tra mã xác thực
-        $isValid = User::checkVerificationCode($_POST['verification_code']);
+        $isValid = User::checkVerificationCode($email, $_POST['verification_code']);
 
         if (!$isValid) {
             $_SESSION['errors'] = ['general' => 'Mã xác thực không hợp lệ'];
@@ -239,6 +265,61 @@ class AuthController extends Controller
         }
 
         // Nếu mã xác thực hợp lệ, chuyển hướng đến trang đổi mật khẩu
+        $_SESSION['success'] = 'Xác thực thành công, vui lòng đặt lại mật khẩu';
         $this->redirect('/reset-password');
+    }
+
+    public function resetPassword()
+    {
+        $this->view('auth/resetpassword', ['title' => 'Đặt lại mật khẩu']);
+    }
+
+    public function resetPasswordPost()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/reset-password');
+        }
+
+        // Validate CSRF
+        if (!Csrf::validate($_POST['csrf_token'] ?? '')) {
+            $_SESSION['errors'] = ['general' => 'Token không hợp lệ'];
+            return $this->view('auth/resetpassword', [
+                'title' => 'Đặt lại mật khẩu',
+                'old'   => $_POST
+            ]);
+        }
+
+        $email = $_SESSION['verification_email'] ?? null;
+        if (!$email) {
+            $_SESSION['errors'] = ['general' => 'Phiên đã hết hạn, vui lòng nhập lại email'];
+            return $this->redirect('/forgot-password');
+        }
+
+        // Validate dữ liệu form
+        $request = new ResetPasswordRequest($_POST);
+
+        if ($request->fails()) {
+            $_SESSION['errors'] = $request->errors();
+            return $this->view('auth/resetpassword', [
+                'title'  => 'Đặt lại mật khẩu',
+                'old'    => $_POST
+            ]);
+        }
+
+        // Cập nhật mật khẩu mới
+        $updated = User::updatePasswordByEmail($email, $_POST['password']);
+
+        if ($updated) {
+            // Xóa token và email xác thực khỏi session
+            unset($_SESSION['verification_email']);
+            $_SESSION['success'] = 'Đặt lại mật khẩu thành công';
+            $this->redirect('/login');
+        } else {
+            $_SESSION['errors'] = ['general' => 'Đặt lại mật khẩu không thành công'];
+            return $this->view('auth/resetpassword', [
+                'title' => 'Đặt lại mật khẩu',
+                'old'   => $_POST
+            ]);
+        }
     }
 }
