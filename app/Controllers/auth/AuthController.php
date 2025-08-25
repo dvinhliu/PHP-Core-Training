@@ -6,6 +6,7 @@ use App\Core\Controller;
 use App\Requests\LoginRequest;
 use App\Requests\RegisterRequest;
 use App\Core\Csrf;
+use App\Models\RoleType;
 use App\Models\User;
 use App\Requests\ForgotPasswordRequest;
 use App\Requests\ResetPasswordRequest;
@@ -80,7 +81,8 @@ class AuthController extends Controller
         // Tìm user
         $user = User::getUserByCredentials($username, $password);
 
-        if (!$user) {
+
+        if (!$user  || $user->getRoleId() === RoleType::GUEST->value) {
             $_SESSION['errors'] = ['general' => 'Username hoặc mật khẩu không chính xác'];
             return $this->view('auth/login', [
                 'title'  => 'Trang đăng nhập',

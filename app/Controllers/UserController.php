@@ -12,64 +12,26 @@ class UserController extends Controller
 {
     public function index()
     {
-        // Nếu chưa login bằng session → thử check cookie remember_token
-        if (!isset($_SESSION['user_id'])) {
-            if (!empty($_COOKIE['remember_token'])) {
-                $user = User::getUserByRememberToken($_COOKIE['remember_token']);
-                if ($user) {
-                    // Lưu lại session từ cookie
-                    $_SESSION['user_id']   = $user->getId();
-                    $_SESSION['user_name'] = $user->getUserName();
-                    $_SESSION['role_id']   = $user->getRoleId();
-                } else {
-                    // Token sai hoặc hết hạn → clear cookie + redirect login
-                    setcookie("remember_token", '', [
-                        'expires' => time() - 3600,
-                        'path'    => '/',
-                        'httponly' => true,
-                        'samesite' => 'Strict'
-                    ]);
-                    $this->redirect('/login');
-                }
-            } else {
-                $this->redirect('/login');
-            }
-        }
+        // Gọi middleware để đảm bảo login + quyền
+        \App\Middleware\AuthMiddleware::check(['view_users']);
+        // -> yêu cầu quyền view_users mới vào được
 
-        // Kiểm tra user trong DB
-        $user = User::getUserById($_SESSION['user_id']);
-        if (!$user) {
-            $this->redirect('/logout');
-        }
+        $perPage = 10;
+        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $offset = ($page - 1) * $perPage;
 
-        // Check quyền xem danh sách user
-        $canViewUsers = in_array($_SESSION['role_id'], [
-            RoleType::ADMIN->value,
-            RoleType::MEMBER->value
-        ]);
+        $totalUsers = User::countAll();
+        $totalPages = (int) ceil($totalUsers / $perPage);
 
-        $users = [];
-        $page = 1;
-        $totalPages = 1;
+        $users = User::getUsersPaginated($perPage, $offset);
 
-        if ($canViewUsers) {
-            $perPage = 10;
-            $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-            $offset = ($page - 1) * $perPage;
-
-            $totalUsers = User::countAll();
-            $totalPages = (int) ceil($totalUsers / $perPage);
-
-            $users = User::getUsersPaginated($perPage, $offset);
-
-            // Nếu là member → đưa chính mình lên đầu
-            if ($_SESSION['role_id'] === RoleType::MEMBER->value) {
-                usort($users, function ($a, $b) {
-                    if ($a->getId() == $_SESSION['user_id']) return -1;
-                    if ($b->getId() == $_SESSION['user_id']) return 1;
-                    return 0;
-                });
-            }
+        // Nếu là member → đưa chính mình lên đầu
+        if ($_SESSION['role_id'] === RoleType::MEMBER->value) {
+            usort($users, function ($a, $b) {
+                if ($a->getId() == $_SESSION['user_id']) return -1;
+                if ($b->getId() == $_SESSION['user_id']) return 1;
+                return 0;
+            });
         }
 
         // Render view

@@ -1,23 +1,23 @@
 <?php
 
 use App\Core\App;
+use App\Middleware\AuthMiddleware;
 
-App::router()->get('/', 'UserController@index', ['name' => 'user.home']);
+App::router()->get('/', 'UserController@index', ['name' => 'user.home', 'middleware' => [fn() => AuthMiddleware::check(['view_users'])]]);
 
 App::router()->get('/login', 'Auth\AuthController@login', ['name' => 'auth.login']);
 App::router()->post('/login', 'Auth\AuthController@loginPost', ['name' => 'auth.login.post']);
+App::router()->get('/register', 'Auth\AuthController@register', ['name' => 'auth.register', 'middleware' => [fn() => AuthMiddleware::check(['register'])]]);
+App::router()->post('/register', 'Auth\AuthController@registerPost', ['name' => 'auth.register.post', 'middleware' => [fn() => AuthMiddleware::check(['register'])]]);
 
-App::router()->get('/register', 'Auth\AuthController@register', ['name' => 'auth.register']);
-App::router()->post('/register', 'Auth\AuthController@registerPost', ['name' => 'auth.register.post']);
+App::router()->get('/logout', 'Auth\AuthController@logout', ['name' => 'auth.logout', 'middleware' => [fn() => AuthMiddleware::check()]]);
 
-App::router()->get('/logout', 'Auth\AuthController@logout', ['name' => 'auth.logout']);
+App::router()->get('/viewUser/{id}', 'UserController@viewUser', ['name' => 'user.view', 'middleware' => [fn() => AuthMiddleware::check(['view_any_user', 'view_self'])]]);
 
-App::router()->get('/viewUser/{id}', 'UserController@viewUser', ['name' => 'user.view']);
+App::router()->get('/editUser/{id}', 'UserController@editUser', ['name' => 'user.edit', 'middleware' => [fn() => AuthMiddleware::check(['view_any_user', 'view_self'])]]);
+App::router()->post('/editUser', 'UserController@editUserPost', ['name' => 'user.edit.post', 'middleware' => [fn() => AuthMiddleware::check(['edit_any_user', 'edit_self'])]]);
 
-App::router()->get('/editUser/{id}', 'UserController@editUser', ['name' => 'user.edit']);
-App::router()->post('/editUser', 'UserController@editUserPost', ['name' => 'user.edit.post']);
-
-App::router()->post('/deleteUser/{id}', 'UserController@deleteUser', ['name' => 'user.delete']);
+App::router()->post('/deleteUser/{id}', 'UserController@deleteUser', ['name' => 'user.delete', 'middleware' => [fn() => AuthMiddleware::check(['delete_any_user', 'delete_self'])]]);
 
 App::router()->get('/404', 'UserController@page404', ['name' => 'page.404']);
 
