@@ -12,15 +12,37 @@ class UserController extends Controller
 {
     public function index()
     {
-        if (!isset($_SESSION['user_name'])) {
-            $this->redirect('/login');
+        // Nếu chưa login bằng session → thử check cookie remember_token
+        if (!isset($_SESSION['user_id'])) {
+            if (!empty($_COOKIE['remember_token'])) {
+                $user = User::getUserByRememberToken($_COOKIE['remember_token']);
+                if ($user) {
+                    // Lưu lại session từ cookie
+                    $_SESSION['user_id']   = $user->getId();
+                    $_SESSION['user_name'] = $user->getUserName();
+                    $_SESSION['role_id']   = $user->getRoleId();
+                } else {
+                    // Token sai hoặc hết hạn → clear cookie + redirect login
+                    setcookie("remember_token", '', [
+                        'expires' => time() - 3600,
+                        'path'    => '/',
+                        'httponly' => true,
+                        'samesite' => 'Strict'
+                    ]);
+                    $this->redirect('/login');
+                }
+            } else {
+                $this->redirect('/login');
+            }
         }
 
+        // Kiểm tra user trong DB
         $user = User::getUserById($_SESSION['user_id']);
         if (!$user) {
             $this->redirect('/logout');
         }
 
+        // Check quyền xem danh sách user
         $canViewUsers = in_array($_SESSION['role_id'], [
             RoleType::ADMIN->value,
             RoleType::MEMBER->value
@@ -40,7 +62,7 @@ class UserController extends Controller
 
             $users = User::getUsersPaginated($perPage, $offset);
 
-            // Member → đưa chính mình lên đầu
+            // Nếu là member → đưa chính mình lên đầu
             if ($_SESSION['role_id'] === RoleType::MEMBER->value) {
                 usort($users, function ($a, $b) {
                     if ($a->getId() == $_SESSION['user_id']) return -1;
@@ -50,6 +72,7 @@ class UserController extends Controller
             }
         }
 
+        // Render view
         $this->view('home', [
             'title'      => 'Trang chủ',
             'users'      => $users,

@@ -20,10 +20,11 @@ class MailService
             $mail->SMTPSecure = $_ENV['MAIL_ENCRYPTION'];
             $mail->Port       = $_ENV['MAIL_PORT'];
 
-            $mail->setFrom($_ENV['MAIL_USERNAME'], 'My App');
+            $mail->setFrom($_ENV['MAIL_USERNAME'], 'VinhCore');
             $mail->addAddress($to);
 
             $mail->isHTML(true);
+            $mail->CharSet = 'UTF-8';
             $mail->Subject = $subject;
             $mail->Body    = $body;
 
