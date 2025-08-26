@@ -210,6 +210,7 @@ class AuthController extends Controller
         $token = bin2hex(random_bytes(8));
 
         $saved = User::setResetToken($email, $token);
+        $user = User::getUserByEmail($email);
 
         if (!$saved) {
             $_SESSION['errors'] = ['general' => 'Không thể tạo liên kết đặt lại mật khẩu'];
@@ -221,7 +222,7 @@ class AuthController extends Controller
 
         // Gửi email chứa liên kết đặt lại mật khẩu
         $subject = "Đặt lại mật khẩu";
-        $message = "Mã xác thực của bạn là: $token thời gian hiệu lực trong 5 phút";
+        $message = "<p style ='font-size: 20px;'>Xin chào <b>" . $user->getUserName() . "</b>,<br> Mã xác thực của bạn là: <b>$token</b> thời gian hiệu lực trong <b>5 phút</b></p>";
         MailService::sendMail($email, $subject, $message);
 
         $_SESSION['verification_email'] = $email;
