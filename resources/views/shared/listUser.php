@@ -26,7 +26,6 @@ use App\Models\RoleType;
                         <td class="flex justify-center px-6 py-3 space-x-2">
                             <?php if ($_SESSION['role_id'] === RoleType::ADMIN->value): ?>
                                 <!-- Admin thao tác với tất cả -->
-                                <a href="#" class="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600">Description</a>
                                 <a href="<?= $router->route('user.edit', ['id' => encode($user->getId())]) ?>" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</a>
                                 <a href="<?= $router->route('user.view', ['id' => encode($user->getId())]) ?>" class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600">View</a>
                                 <a href="?action=delete_confirm&id=<?= encode($user->getId()) ?>"
@@ -37,7 +36,6 @@ use App\Models\RoleType;
 
                             <?php elseif ($_SESSION['role_id'] === RoleType::MEMBER->value && $_SESSION['user_id'] == $user->getId()): ?>
                                 <!-- Member chỉ thao tác với chính mình -->
-                                <a href="#" class="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600">Description</a>
                                 <a href="<?= $router->route('user.edit', ['id' => encode($user->getId())]) ?>" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</a>
                                 <a href="<?= $router->route('user.view', ['id' => encode($user->getId())]) ?>" class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600">View</a>
                                 <a href="?action=delete_confirm&id=<?= encode($user->getId()) ?>"
@@ -113,5 +111,7 @@ use App\Models\RoleType;
                 </div>
             </div>
         </dialog>
+    <?php else: ?>
+        <?php $_SESSION['errors'] = ['general' => 'Xóa không thành công.']; ?>
     <?php endif; ?>
 <?php endif; ?>

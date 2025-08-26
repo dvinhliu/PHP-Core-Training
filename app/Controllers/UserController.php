@@ -34,6 +34,7 @@ class UserController extends Controller
             });
         }
 
+        unset($_SESSION['errors'], $_SESSION['old']);
         // Render view
         $this->view('home', [
             'title'      => 'Trang chủ',
@@ -117,14 +118,14 @@ class UserController extends Controller
         }
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->redirect("editUser/{encode($id)}");
+            $this->redirect("editUser/" . encode($id));
         }
 
         // CSRF check
         if (!Csrf::validate($_POST['csrf_token'] ?? '')) {
             $_SESSION['errors'] = ['general' => 'Token không hợp lệ'];
             $_SESSION['old']    = $_POST;
-            $this->redirect("editUser/{encode($id)}");
+            $this->redirect("editUser/" . encode($id));
         }
 
         // Validate dữ liệu
@@ -133,25 +134,33 @@ class UserController extends Controller
         if ($request->fails()) {
             $_SESSION['errors'] = $request->errors();
             $_SESSION['old']    = $_POST;
-            $this->redirect("editUser/{encode($id)}");
+            $this->redirect("editUser/" . encode($id));
         }
 
         // Update user
+        $updatedAt = $_POST['updated_at'] ?? null;
+
         $success = User::updateUser([
             'id'        => $id,
             'user_name' => $_POST['user_name'],
             'email'     => $_POST['email'],
             'password'  => $_POST['password'],
-            'role_id'   => $_POST['role_id']
+            'role_id'   => $_POST['role_id'],
+            'description' => $_POST['description'],
+            'updated_at' => $updatedAt
         ]);
 
         if ($success) {
             $_SESSION['success'] = 'Chỉnh sửa thành công';
+
+            if ($_SESSION['user_id'] == $id) {
+                $this->redirect('/logout');
+            }
             $this->redirect('/');
         } else {
-            $_SESSION['errors'] = ['general' => 'Chỉnh sửa không thành công'];
+            $_SESSION['errors'] = ['general' => 'Dữ liệu này đã bị thay đổi.'];
             $_SESSION['old']    = $_POST;
-            $this->redirect("editUser/{encode($id)}");
+            $this->redirect("editUser/" . encode($id));
         }
     }
 
@@ -166,7 +175,8 @@ class UserController extends Controller
         $user = User::getUserById($id);
 
         if (!$user) {
-            $this->redirect('/404');
+            $_SESSION['errors'] = ['general' => 'Xóa không thành công.'];
+            $this->redirect('/');
         }
 
         // CSRF check

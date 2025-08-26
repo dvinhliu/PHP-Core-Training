@@ -15,7 +15,7 @@ class User
     private string $email;
     private string $password;
     private int $role_id;
-    private int $is_active;
+    private string $description;
     private ?string $reset_token;
     private ?DateTime $reset_token_expires;
     private ?string $remember_token;
@@ -30,10 +30,11 @@ class User
         $this->email = $data['email'] ?? '';
         $this->password = $data['password'] ?? '';
         $this->role_id = $data['role_id'] ?? 0;
-        $this->is_active = $data['is_active'] ?? 1;
-
+        $this->description = $data['description'] ?? '';
         $this->reset_token         = $data['reset_token'] ?? null;
         $this->reset_token_expires = !empty($data['reset_token_expires']) ? new DateTime($data['reset_token_expires']) : null;
+        $this->remember_token      = $data['remember_token'] ?? null;
+        $this->remember_expired_at = !empty($data['remember_expired_at']) ? new DateTime($data['remember_expired_at']) : null;
         $this->created_at          = !empty($data['created_at']) ? new DateTime($data['created_at']) : null;
         $this->updated_at          = !empty($data['updated_at']) ? new DateTime($data['updated_at']) : null;
     }
@@ -64,9 +65,9 @@ class User
         return $this->role_id;
     }
 
-    public function isActive(): bool
+    public function getDescription(): string
     {
-        return (bool)$this->is_active;
+        return $this->description;
     }
 
     public function getResetToken(): ?string
@@ -77,6 +78,16 @@ class User
     public function getResetTokenExpires(?string $format = 'Y-m-d H:i:s'): ?string
     {
         return $this->reset_token_expires?->format($format);
+    }
+
+    public function getRememberToken(): ?string
+    {
+        return $this->remember_token;
+    }
+
+    public function getRememberTokenExpires(?string $format = 'Y-m-d H:i:s'): ?string
+    {
+        return $this->remember_expired_at?->format($format);
     }
 
     public function getCreatedAt(?string $format = 'Y-m-d H:i:s'): ?string
@@ -255,41 +266,47 @@ class User
         try {
             $db = Database::getConnection();
 
-            // Lấy user hiện tại để giữ nguyên password nếu không nhập mới
+            // Lấy password hiện tại nếu người dùng không nhập mới
             $stmt = $db->prepare("SELECT password FROM users WHERE id = :id LIMIT 1");
             $stmt->execute(['id' => $data['id']]);
             $current = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$current) {
-                return false; // User không tồn tại
+                return false;
             }
 
-            // Nếu có nhập password mới thì hash lại, ngược lại giữ nguyên
             $password = !empty($data['password'])
                 ? password_hash($data['password'], PASSWORD_BCRYPT)
                 : $current['password'];
 
+            // Optimistic Locking bằng updated_at
             $stmt = $db->prepare("
             UPDATE users 
             SET user_name = :user_name, 
                 email = :email, 
                 password = :password, 
-                role_id = :role_id, 
-                updated_at = NOW() 
-            WHERE id = :id
+                role_id = :role_id,
+                description = :description,
+                updated_at = NOW()
+            WHERE id = :id AND updated_at = :updated_at
         ");
 
-            return $stmt->execute([
-                'user_name' => $data['user_name'],
-                'email'     => $data['email'],
-                'password'  => $password,
-                'role_id'   => $data['role_id'],
-                'id'        => $data['id'],
+            $stmt->execute([
+                'user_name'  => $data['user_name'],
+                'email'      => $data['email'],
+                'password'   => $password,
+                'role_id'    => $data['role_id'],
+                'description' => $data['description'] ?? '',
+                'id'         => $data['id'],
+                'updated_at' => $data['updated_at'],
             ]);
+
+            return $stmt->rowCount() > 0;
         } catch (\Exception $e) {
             die("Error updating user: " . $e->getMessage());
         }
     }
+
 
     public static function updatePasswordByEmail(string $email, string $newPassword): bool
     {
