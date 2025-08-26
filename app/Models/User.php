@@ -148,6 +148,19 @@ class User
         }
     }
 
+    public static function getUserByEmail(string $email): ?User
+    {
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->prepare("SELECT * FROM users WHERE email = :email LIMIT 1");
+            $stmt->execute(['email' => $email]);
+            $data = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $data ? new User($data) : null;
+        } catch (\Exception $e) {
+            die("Error fetching user by email: " . $e->getMessage());
+        }
+    }
+
     public static function getUserByRememberToken(string $rawToken): ?User
     {
         try {
