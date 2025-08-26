@@ -1,13 +1,3 @@
-<?php
-
-use App\Models\RoleType;
-
-echo '<pre>';
-print_r($_SESSION);
-echo '</pre>';
-
-?>
-
 <div class="flex-1 container my-8 mx-auto min-h-screen">
     <div class="text-center font-semibold text-6xl mb-8">Xin chào <?= htmlspecialchars($_SESSION['user_name']) ?> <span class="text-[#63605F]">đến với APP CRUD</span></div>
 
