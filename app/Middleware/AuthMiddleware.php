@@ -29,12 +29,12 @@ class AuthMiddleware
                         'httponly' => true,
                         'samesite' => 'Strict'
                     ]);
-                    $_SESSION['errors'] = ['general' => 'Bạn không có quyền truy cập vào chức năng này.'];
+                    $_SESSION['errors'] = ['general' => 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'];
                     header("Location: /login");
                     exit;
                 }
             } else {
-                $_SESSION['errors'] = ['general' => 'Bạn không có quyền truy cập vào chức năng này.'];
+                $_SESSION['errors'] = ['general' => 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'];
                 header("Location: /login");
                 exit;
             }

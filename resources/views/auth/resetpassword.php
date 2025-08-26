@@ -1,10 +1,3 @@
-<?php
-echo '<pre>';
-print_r($_SESSION);
-echo '</pre>';
-
-?>
-
 <div class="flex-1 my-8 flex items-center justify-center">
     <div class="bg-[#FAF7F2] rounded shadow p-6 w-[600px]">
         <div class="text-center font-semibold text-3xl mb-10" novalidate>Màn hình đặt lại mật khẩu</div>

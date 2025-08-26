@@ -1,9 +1,3 @@
-<?php
-echo '<pre>';
-print_r($_SESSION);
-echo '</pre>';
-
-?>
 <div class="flex-1 my-8 flex items-center justify-center">
     <div class="bg-[#FAF7F2] rounded shadow p-6 w-[600px]">
         <!-- Login form -->
@@ -11,6 +5,7 @@ echo '</pre>';
         <form action="<?= $router->route('user.edit.post') ?>" method="POST" class="space-y-4" novalidate>
             <?= \App\Core\Csrf::tokenField() ?>
             <input type="hidden" name="id" value="<?= htmlspecialchars(encode($user->getId())) ?>">
+            <input type="hidden" name="updated_at" value="<?= htmlspecialchars($user->getUpdatedAt()) ?>">
             <div class="flex flex-col-2 gap-3">
                 <div class="flex-1">
                     <div class="space-y-6">
@@ -63,6 +58,12 @@ echo '</pre>';
                                     value="<?= \App\Models\RoleType::tryFromValue($user->getRoleId())->label() ?>" disabled>
                                 <input type="hidden" name="role_id" value="<?= $user->getRoleId() ?>">
                             <?php endif; ?>
+                        </div>
+                        <div class="flex items-center">
+                            <label for="description" class="w-1/3 text-gray-700 font-semibold">Description</label>
+                            <div class="w-2/3 flex flex-col">
+                                <textarea name="description" placeholder="Description" class="h-[200px] resize-none border p-2 rounded bg-gray-100"><?= htmlspecialchars($user->getDescription()) ?></textarea>
+                            </div>
                         </div>
                     </div>
                 </div>

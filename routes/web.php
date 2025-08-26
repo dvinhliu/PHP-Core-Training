@@ -15,7 +15,7 @@ App::router()->get('/logout', 'Auth\AuthController@logout', ['name' => 'auth.log
 App::router()->get('/viewUser/{id}', 'UserController@viewUser', ['name' => 'user.view', 'middleware' => [fn() => AuthMiddleware::check(['view_any_user', 'view_self'])]]);
 
 App::router()->get('/editUser/{id}', 'UserController@editUser', ['name' => 'user.edit', 'middleware' => [fn() => AuthMiddleware::check(['view_any_user', 'view_self'])]]);
-App::router()->post('/editUser', 'UserController@editUserPost', ['name' => 'user.edit.post', 'middleware' => [fn() => AuthMiddleware::check(['edit_any_user', 'edit_self'])]]);
+App::router()->post('/editUser', 'UserController@editUserPost', ['name' => 'user.edit.post', 'middleware' => [fn() => AuthMiddleware::check(['update_any_user', 'update_self'])]]);
 
 App::router()->post('/deleteUser/{id}', 'UserController@deleteUser', ['name' => 'user.delete', 'middleware' => [fn() => AuthMiddleware::check(['delete_any_user', 'delete_self'])]]);
 

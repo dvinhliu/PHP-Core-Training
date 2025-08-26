@@ -31,7 +31,7 @@ class AuthController extends Controller
             User::setRememberToken($_SESSION['user_id'], null, null);
         }
 
-        unset($_SESSION['user_id'], $_SESSION['user_name'], $_SESSION['role_id']);
+        unset($_SESSION['user_id'], $_SESSION['user_name'], $_SESSION['role_id'], $_SESSION['errors'], $_SESSION['old']);
 
         // Xóa cookie remember_token
         if (isset($_COOKIE['remember_token'])) {
